@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Captura de Auth Code</title>
+<style>
+  :root {
+    --bg: #f6f5f2;
+    --surface: #ffffff;
+    --border: #e3e0d9;
+    --text: #1c1b19;
+    --text-muted: #6b6860;
+    --accent: #d94f70;
+    --accent-soft: #fbe7eb;
+    --mono-bg: #1c1b19;
+    --mono-text: #f1efe9;
+    --ok-bg: #e9f5ec;
+    --ok-border: #a8d5b5;
+    --ok-text: #1e5631;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #161513;
+      --surface: #201f1c;
+      --border: #37352f;
+      --text: #f1efe9;
+      --text-muted: #a39e93;
+      --accent: #ef7691;
+      --accent-soft: #3a1f26;
+      --mono-bg: #0d0c0b;
+      --mono-text: #f1efe9;
+      --ok-bg: #16281c;
+      --ok-border: #2e5c3c;
+      --ok-text: #8fd6a4;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #161513;
+    --surface: #201f1c;
+    --border: #37352f;
+    --text: #f1efe9;
+    --text-muted: #a39e93;
+    --accent: #ef7691;
+    --accent-soft: #3a1f26;
+    --mono-bg: #0d0c0b;
+    --mono-text: #f1efe9;
+    --ok-bg: #16281c;
+    --ok-border: #2e5c3c;
+    --ok-text: #8fd6a4;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    padding: 32px 16px 48px;
+    display: flex;
+    justify-content: center;
+  }
+  .wrap {
+    width: 100%;
+    max-width: 640px;
+  }
+  .eyebrow {
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+  }
+  h1 {
+    font-size: 24px;
+    margin: 0 0 4px;
+    letter-spacing: -0.01em;
+  }
+  .sub {
+    color: var(--text-muted);
+    font-size: 14px;
+    margin: 0 0 28px;
+    line-height: 1.5;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  .card h2 {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    margin: 0 0 12px;
+    font-weight: 600;
+  }
+  .field {
+    margin-bottom: 14px;
+  }
+  .field:last-child { margin-bottom: 0; }
+  .field-label {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+  }
+  .value-row {
+    display: flex;
+    gap: 8px;
+    align-items: stretch;
+  }
+  .mono-value {
+    flex: 1;
+    min-width: 0;
+    background: var(--mono-bg);
+    color: var(--mono-text);
+    font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+    font-size: 13px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    overflow-x: auto;
+    white-space: pre;
+  }
+  button.copy {
+    flex-shrink: 0;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 0 16px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  button.copy:active { transform: translateY(1px); }
+  .status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+  }
+  .status.ok {
+    background: var(--ok-bg);
+    border: 1px solid var(--ok-border);
+    color: var(--ok-text);
+  }
+  .status.waiting {
+    background: var(--accent-soft);
+    color: var(--accent);
+    border: 1px solid var(--accent-soft);
+  }
+  ol {
+    margin: 0;
+    padding-left: 20px;
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--text);
+  }
+  ol code, p code {
+    background: var(--accent-soft);
+    color: var(--accent);
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-size: 12.5px;
+  }
+  .this-url {
+    margin-top: 6px;
+  }
+  .empty-note {
+    color: var(--text-muted);
+    font-size: 13px;
+  }
+  .copied-badge {
+    font-size: 11px;
+    color: var(--ok-text);
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    margin-left: 8px;
+  }
+  .copied-badge.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <div class="eyebrow">Choclo Producciones · Herramienta interna</div>
+  <h1>Captura de Auth Code</h1>
+  <p class="sub">Página de callback para autorizar la TikTok Business API. Registrá esta URL como Redirect URL de la app y, después de autorizar, el código va a aparecer acá abajo.</p>
+
+  <div id="statusBox"></div>
+
+  <div class="card" id="paramsCard" hidden>
+    <h2>Parámetros recibidos</h2>
+    <div id="paramsList"></div>
+  </div>
+
+  <div class="card">
+    <h2>Cómo usarla</h2>
+    <ol>
+      <li>Copiá la URL de esta página (de la barra de direcciones) y pegala como <code>Redirect URL</code> / <code>Advertiser Redirect URL</code> en la configuración de la app dentro de business-api.tiktok.com/portal.</li>
+      <li>Abrí la URL de autorización que te da TikTok Business Center (botón "Autorizar" o el link de autorización).</li>
+      <li>Después de aceptar los permisos, TikTok te va a redirigir de nuevo acá, con <code>auth_code</code> (o <code>code</code>) en la URL.</li>
+      <li>Copiá ese valor con el botón y pegalo en la conversación con Claude.</li>
+    </ol>
+  </div>
+</div>
+
+<script>
+  function getParams() {
+    const params = new URLSearchParams(window.location.search);
+    const out = {};
+    for (const [k, v] of params.entries()) out[k] = v;
+    return out;
+  }
+
+  function copyToClipboard(text, badgeEl) {
+    const done = () => {
+      badgeEl.classList.add("show");
+      setTimeout(() => badgeEl.classList.remove("show"), 1400);
+    };
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done).catch(() => fallbackCopy(text, done));
+      } else {
+        fallbackCopy(text, done);
+      }
+    } catch (e) {
+      fallbackCopy(text, done);
+    }
+  }
+
+  function fallbackCopy(text, done) {
+    try {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+      done();
+    } catch (e) {
+      /* clipboard unavailable; value is still visible to copy manually */
+    }
+  }
+
+  function render() {
+    const params = getParams();
+    const keys = Object.keys(params);
+    const statusBox = document.getElementById("statusBox");
+    const paramsCard = document.getElementById("paramsCard");
+    const paramsList = document.getElementById("paramsList");
+
+    const codeKey = ["auth_code", "code"].find((k) => params[k]);
+
+    if (keys.length === 0) {
+      statusBox.innerHTML = '<div class="status waiting">Esperando redirección de TikTok — todavía no llegó ningún parámetro.</div>';
+      paramsCard.hidden = true;
+      return;
+    }
+
+    if (params.error) {
+      statusBox.innerHTML = '<div class="status" style="background:var(--accent-soft);color:var(--accent);border:1px solid var(--accent-soft)">TikTok devolvió un error de autorización.</div>';
+    } else if (codeKey) {
+      statusBox.innerHTML = '<div class="status ok">Código recibido correctamente.</div>';
+    } else {
+      statusBox.innerHTML = '<div class="status waiting">Llegaron parámetros, pero no un auth_code reconocible. Revisalos abajo.</div>';
+    }
+
+    paramsCard.hidden = false;
+    paramsList.innerHTML = "";
+    keys.forEach((key, i) => {
+      const field = document.createElement("div");
+      field.className = "field";
+      const label = document.createElement("div");
+      label.className = "field-label";
+      label.textContent = key === codeKey ? key + " (este es el código a copiar)" : key;
+      const row = document.createElement("div");
+      row.className = "value-row";
+      const val = document.createElement("div");
+      val.className = "mono-value";
+      val.textContent = params[key];
+      const btn = document.createElement("button");
+      btn.className = "copy";
+      btn.textContent = "Copiar";
+      const badge = document.createElement("span");
+      badge.className = "copied-badge";
+      badge.textContent = "¡Copiado!";
+      btn.addEventListener("click", () => copyToClipboard(params[key], badge));
+      row.appendChild(val);
+      row.appendChild(btn);
+      field.appendChild(label);
+      field.appendChild(row);
+      field.appendChild(badge);
+      paramsList.appendChild(field);
+    });
+  }
+
+  render();
+</script>
+
+</body>
+</html>
